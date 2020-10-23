@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+  invoices-service:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - /tmp/h2-db:/tmp/h2-db

@@ -7,6 +7,7 @@ package com.diehl.invoice.service;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,13 +22,17 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.diehl.invoice.domain.Invoice;
+import com.diehl.invoice.domain.InvoiceId;
 import com.diehl.invoice.domain.InvoiceSummary;
 import com.diehl.invoice.dto.InvoiceCsvEntry;
+import com.diehl.invoice.dto.InvoiceInfo;
 import com.diehl.invoice.dto.InvoiceKey;
 import com.diehl.invoice.exception.DuplicateEntriesUploadException;
+import com.diehl.invoice.exception.InvoiceNotFoundException;
 import com.diehl.invoice.exception.SupplierNotFoundException;
 import com.diehl.invoice.repository.InvoiceRepository;
 import com.diehl.invoice.repository.InvoiceSummaryRepository;
+import com.diehl.invoice.util.InvoiceUtil;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -110,6 +115,41 @@ public class InvoiceService {
 	 */
 	public InvoiceSummary retrieveSupplierSummary(String supplierId) throws SupplierNotFoundException {
 		return summaryRepo.findById(supplierId).orElseThrow(SupplierNotFoundException::new);
+	}
+	
+	/**
+	 * Finds invoice by Id.
+	 * 
+	 * @param invoiceId invoice id
+	 * @param supplierId supplier id
+	 * @return invoice if found
+	 * @throws InvoiceNotFoundException if not found
+	 */
+	public InvoiceInfo retrieveInvoiceSummaryById(String invoiceId, String supplierId) throws InvoiceNotFoundException {
+		final Invoice invoice = invoiceRepo.findById(new InvoiceId(invoiceId, supplierId)).orElseThrow(InvoiceNotFoundException::new);
+		final InvoiceInfo response = new InvoiceInfo();
+		
+		response.setInvoiceAmount(invoice.getInvoiceAmount());
+		response.setInvoiceId(invoice.getInvoiceId());
+		response.setPaymentAmount(invoice.getPaymentAmount());
+		response.setPaymentDate(invoice.getPaymentDate());
+		response.setSupplierId(invoice.getSupplierId());
+		response.setDueDate(invoice.getInvoiceDate().plusDays(invoice.getTerms()));
+		if (invoice.getPaymentAmount() != null) {
+			response.setInvoiceOpenBalance(invoice.getInvoiceAmount().subtract(invoice.getPaymentAmount()));
+		} else {
+			response.setInvoiceOpenBalance(invoice.getInvoiceAmount());
+		}
+		response.setStatus(InvoiceUtil.getInvoiceStatus(invoice));
+		//Not paid
+		if (invoice.getPaymentAmount() == null || invoice.getInvoiceAmount().compareTo(invoice.getPaymentAmount()) == 1) {
+			//Late
+			if (invoice.getInvoiceDate().plusDays(invoice.getTerms()).isBefore(LocalDate.now())) {
+				response.setDaysPastDue(invoice.getInvoiceDate().plusDays(invoice.getTerms()).until(LocalDate.now()).getDays());			
+				
+			}
+		}
+		return response;
 	}
 	
 }

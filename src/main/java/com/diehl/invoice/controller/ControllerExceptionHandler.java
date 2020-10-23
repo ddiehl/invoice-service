@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.diehl.invoice.dto.InvoiceKey;
 import com.diehl.invoice.exception.DuplicateEntriesUploadException;
+import com.diehl.invoice.exception.InvoiceNotFoundException;
 import com.diehl.invoice.exception.SupplierNotFoundException;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handles the exceptions in the controller.
@@ -21,6 +24,7 @@ import com.diehl.invoice.exception.SupplierNotFoundException;
  * @author danieldiehl
  */
 @RestControllerAdvice
+@Slf4j
 public class ControllerExceptionHandler {
 
 	/**
@@ -32,11 +36,12 @@ public class ControllerExceptionHandler {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ExceptionHandler(value = DuplicateEntriesUploadException.class)
 	public String handleDuplicateException(DuplicateEntriesUploadException ex) {
+		log.error("error", ex);
 		return  ex.getIds().stream().map(InvoiceKey::toString).collect(Collectors.joining("\n")); 
 	}
 	
 	/**
-	 * Handles any other exception unexpected.
+	 * Handles Supplier not found.
 	 * 
 	 * @param t exception
 	 * @return error message
@@ -48,6 +53,18 @@ public class ControllerExceptionHandler {
 	}
 	
 	/**
+	 * Handles invoice not found.
+	 * 
+	 * @param t exception
+	 * @return error message
+	 */
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	@ExceptionHandler(value = InvoiceNotFoundException.class)
+	public String handleInvoiceNotFoundExceptions(InvoiceNotFoundException t) {
+		return "Invoice not found";
+	}
+	
+	/**
 	 * Handles any other exception unexpected.
 	 * 
 	 * @param t exception
@@ -56,6 +73,7 @@ public class ControllerExceptionHandler {
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(value = Exception.class)
 	public String handleUnexpectedExceptions(Exception t) {
+		log.error("error", t);
 		return "Error processing request";
 	}
 	

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.diehl.invoice.domain.InvoiceSummary;
+import com.diehl.invoice.dto.InvoiceInfo;
 import com.diehl.invoice.service.InvoiceService;
 
 /**
@@ -46,6 +47,17 @@ public class InvoiceController {
 	@GetMapping("/ListSupplierSummary")
 	public InvoiceSummary getinvoiceSummary(String supplierId) throws Exception {
 		return service.retrieveSupplierSummary(supplierId);
-		
+	}
+	
+	/**
+	 * Retrieves Invoice info for a given supplier.
+	 * 
+	 * @param supplierId id for the search
+	 * @return invoices if found
+	 * @throws Exception
+	 */
+	@GetMapping("/ListInvoiceSummary")
+	public InvoiceInfo getinvoiceInfo(String supplierId, String invoiceId) throws Exception {
+		return service.retrieveInvoiceSummaryById(invoiceId, supplierId);
 	}
 }

@@ -23,15 +23,16 @@ import org.springframework.stereotype.Service;
 
 import com.diehl.invoice.domain.Invoice;
 import com.diehl.invoice.domain.InvoiceId;
-import com.diehl.invoice.domain.InvoiceSummary;
 import com.diehl.invoice.dto.InvoiceCsvEntry;
 import com.diehl.invoice.dto.InvoiceInfo;
 import com.diehl.invoice.dto.InvoiceKey;
+import com.diehl.invoice.dto.ListPaymentsSummary;
+import com.diehl.invoice.dto.SupplierSummary;
 import com.diehl.invoice.exception.DuplicateEntriesUploadException;
 import com.diehl.invoice.exception.InvoiceNotFoundException;
 import com.diehl.invoice.exception.SupplierNotFoundException;
+import com.diehl.invoice.repository.InvoiceReportRepository;
 import com.diehl.invoice.repository.InvoiceRepository;
-import com.diehl.invoice.repository.InvoiceSummaryRepository;
 import com.diehl.invoice.util.InvoiceUtil;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -51,8 +52,8 @@ public class InvoiceService {
 	private InvoiceRepository invoiceRepo;
 	
 	@Autowired
-	private InvoiceSummaryRepository summaryRepo;
-	
+	private InvoiceReportRepository reportRepo;
+		
 	/**
 	 * Load invoices into the database.
 	 * Process for duplicates
@@ -113,8 +114,8 @@ public class InvoiceService {
 	 * @return summary 
 	 * @throws SupplierNotFoundException in case not found.
 	 */
-	public InvoiceSummary retrieveSupplierSummary(String supplierId) throws SupplierNotFoundException {
-		return summaryRepo.findById(supplierId).orElseThrow(SupplierNotFoundException::new);
+	public SupplierSummary retrieveSupplierSummary(String supplierId) throws SupplierNotFoundException {
+		return reportRepo.retrieveSupplierSummary(supplierId).orElseThrow(SupplierNotFoundException::new);
 	}
 	
 	/**
@@ -130,6 +131,7 @@ public class InvoiceService {
 		final InvoiceInfo response = new InvoiceInfo();
 		
 		response.setInvoiceAmount(invoice.getInvoiceAmount());
+		response.setInvoiceDate(invoice.getInvoiceDate());
 		response.setInvoiceId(invoice.getInvoiceId());
 		response.setPaymentAmount(invoice.getPaymentAmount());
 		response.setPaymentDate(invoice.getPaymentDate());
@@ -140,16 +142,22 @@ public class InvoiceService {
 		} else {
 			response.setInvoiceOpenBalance(invoice.getInvoiceAmount());
 		}
-		response.setStatus(InvoiceUtil.getInvoiceStatus(invoice));
+		response.setStatus(InvoiceUtil.getInvoiceStatus(invoice).getText());
 		//Not paid
 		if (invoice.getPaymentAmount() == null || invoice.getInvoiceAmount().compareTo(invoice.getPaymentAmount()) == 1) {
-			//Late
-			if (invoice.getInvoiceDate().plusDays(invoice.getTerms()).isBefore(LocalDate.now())) {
-				response.setDaysPastDue(invoice.getInvoiceDate().plusDays(invoice.getTerms()).until(LocalDate.now()).getDays());			
-				
-			}
+			response.setDaysPastDue(invoice.getInvoiceDate().plusDays(invoice.getTerms()).until(LocalDate.now()).getDays());			
 		}
 		return response;
+	}
+	
+	/**
+	 * Retrieves payment summary for given supplier.
+	 * 
+	 * @param supplierId for the search
+	 * @return Summary data
+	 */
+	public List<ListPaymentsSummary> retrievePaymentSummaryBySupplier(String supplierId) {
+		return reportRepo.retrieveClosedPaymentSummaryBySupplierId(supplierId);
 	}
 	
 }

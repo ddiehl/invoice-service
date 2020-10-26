@@ -11,6 +11,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,9 +30,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.diehl.invoice.SpringEnabledTest;
-import com.diehl.invoice.domain.InvoiceSummary;
+import com.diehl.invoice.dto.InvoiceInfo;
 import com.diehl.invoice.dto.InvoiceKey;
+import com.diehl.invoice.dto.ListPaymentsSummary;
+import com.diehl.invoice.dto.SupplierSummary;
 import com.diehl.invoice.exception.DuplicateEntriesUploadException;
+import com.diehl.invoice.exception.InvoiceNotFoundException;
 import com.diehl.invoice.exception.SupplierNotFoundException;
 import com.diehl.invoice.service.InvoiceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -90,10 +96,10 @@ public class InvoiceControllerTest extends SpringEnabledTest {
 	}
 	
 	@Test
-	public void testSumarySuccess() throws Exception {
+	public void testSupplierSumarySuccess() throws Exception {
 		var supplierId = "1";
 		
-		var summary = new InvoiceSummary();
+		var summary = new SupplierSummary();
 		summary.setLateInvoices(1);
 		summary.setOpenInvoices(2);
 		summary.setSupplierId(supplierId);
@@ -109,7 +115,7 @@ public class InvoiceControllerTest extends SpringEnabledTest {
 	}
 
 	@Test
-	public void testSumaryNotFound() throws Exception {
+	public void testSupplierSumaryNotFound() throws Exception {
 		var supplierId = "1";
 		
 		when(service.retrieveSupplierSummary(supplierId)).thenThrow(new SupplierNotFoundException());
@@ -118,5 +124,68 @@ public class InvoiceControllerTest extends SpringEnabledTest {
 		.andExpect(status().isNotFound())
 		.andExpect(content().string("Supplier not found"));
 	}
+
 	
+	/*************** invoice summary**********/
+	@Test
+	public void testInvoiceSumarySuccess() throws Exception {
+		var supplierId = "1";
+		var invoiceId = "inv-1";
+		
+		var summary = new InvoiceInfo();
+		summary.setDaysPastDue(1);
+		summary.setDueDate(LocalDate.now());
+		summary.setInvoiceAmount(BigDecimal.TEN);
+		summary.setInvoiceDate(LocalDate.now());
+		summary.setInvoiceId(invoiceId);
+		summary.setInvoiceOpenBalance(BigDecimal.ZERO);
+		summary.setPaymentAmount(BigDecimal.TEN);
+		summary.setPaymentDate(LocalDate.now());
+		summary.setStatus("Open");
+		summary.setSupplierId(supplierId);
+		
+		
+		when(service.retrieveInvoiceSummaryById(invoiceId, supplierId)).thenReturn(summary);
+		
+		mockMvc.perform(get("/ListInvoiceSummary")
+				.param("supplierId", supplierId)
+				.param("invoiceId", invoiceId))
+		.andExpect(status().isOk())
+		.andExpect(content().json(mapper.writeValueAsString(summary)));
+	}
+	
+	@Test
+	public void testInvoiceSumaryNotFound() throws Exception {
+		var supplierId = "1";
+		var invoiceId = "inv-1";
+		
+		when(service.retrieveInvoiceSummaryById(invoiceId, supplierId)).thenThrow(new InvoiceNotFoundException());
+		
+		mockMvc.perform(get("/ListInvoiceSummary")
+				.param("supplierId", supplierId)
+				.param("invoiceId", invoiceId))
+		.andExpect(status().isNotFound())
+		.andExpect(content().string("Invoice not found"));
+	}
+	
+	/*************** list payments**********/
+	@Test
+	public void testListPaymentsSuccess() throws Exception {
+		var supplierId = "1";
+
+		var summary = new ListPaymentsSummary();
+		summary.setNumberOfInvoicesPaid(BigInteger.ONE);
+		summary.setPaymentAmount(BigDecimal.TEN);
+		summary.setPaymentDate(LocalDate.now());
+		summary.setSupplierId(supplierId);
+
+		var summaries = List.of(summary);
+		
+		when(service.retrievePaymentSummaryBySupplier(supplierId)).thenReturn(summaries);
+		
+		mockMvc.perform(get("/ListPayments")
+				.param("supplierId", supplierId))
+		.andExpect(status().isOk())
+		.andExpect(content().json(mapper.writeValueAsString(summaries)));
+	}
 }

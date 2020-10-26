@@ -25,6 +25,7 @@
 		<!-- versions -->
 		<commons-beanutils.version>1.9.4</commons-beanutils.version>
 		<opencsv.version>5.2</opencsv.version>
+		<spring-web-utils.version>1.5.0</spring-web-utils.version>
 	</properties>
 
 	<dependencies>
@@ -82,6 +83,11 @@
 			<groupId>commons-beanutils</groupId>
 			<artifactId>commons-beanutils</artifactId>
 			<version>${commons-beanutils.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.spartatech</groupId>
+			<artifactId>spring-web-utils-java8</artifactId>
+			<version>${spring-web-utils.version}</version>
 		</dependency>
 		<!-- END: Utility libraries -->
 

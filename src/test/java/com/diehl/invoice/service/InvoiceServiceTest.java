@@ -5,6 +5,7 @@
 package com.diehl.invoice.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -24,12 +25,15 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import com.diehl.invoice.domain.Invoice;
-import com.diehl.invoice.domain.InvoiceSummary;
+import com.diehl.invoice.domain.InvoiceId;
 import com.diehl.invoice.dto.InvoiceKey;
+import com.diehl.invoice.dto.InvoiceStatus;
+import com.diehl.invoice.dto.ListPaymentsSummary;
+import com.diehl.invoice.dto.SupplierSummary;
 import com.diehl.invoice.exception.DuplicateEntriesUploadException;
 import com.diehl.invoice.exception.SupplierNotFoundException;
+import com.diehl.invoice.repository.InvoiceReportRepository;
 import com.diehl.invoice.repository.InvoiceRepository;
-import com.diehl.invoice.repository.InvoiceSummaryRepository;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
 /**
@@ -44,7 +48,7 @@ public class InvoiceServiceTest {
 	private InvoiceRepository invoiceRepo;
 	
 	@Mock
-	private InvoiceSummaryRepository summaryRepo;
+	private InvoiceReportRepository reportRepo;
 	
 	@InjectMocks
 	private InvoiceService tested;
@@ -123,8 +127,8 @@ public class InvoiceServiceTest {
 	@Test
 	public void testSupplierSummarySuccess() throws Exception {
 		final var id = "123";
-		final var resp = Optional.of(new InvoiceSummary());
-		when(summaryRepo.findById(id)).thenReturn(resp);
+		final var resp = Optional.of(new SupplierSummary());
+		when(reportRepo.retrieveSupplierSummary(id)).thenReturn(resp);
 		
 		assertEquals(resp.get(), tested.retrieveSupplierSummary(id));
 	}
@@ -132,11 +136,205 @@ public class InvoiceServiceTest {
 	@Test
 	public void testSupplierSummarySupplierNotFound() throws Exception {
 		final var id = "123";
-		final Optional<InvoiceSummary> resp = Optional.empty();
-		when(summaryRepo.findById(id)).thenReturn(resp);
+		final Optional<SupplierSummary> resp = Optional.empty();
+		when(reportRepo.retrieveSupplierSummary(id)).thenReturn(resp);
 		
 		assertThrows(SupplierNotFoundException.class, () -> tested.retrieveSupplierSummary(id));
 	}
 	
+	/****** invoices summary ********/
+	@Test
+	public void testRetRieveInvoiceSummaryByIdOpenInvoiceNoPayment() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now());
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertEquals(-10, info.getDaysPastDue());
+		assertEquals(LocalDate.now().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceOpenBalance());
+		assertNull(info.getPaymentAmount());
+		assertNull(info.getPaymentDate());
+		assertEquals(InvoiceStatus.OPEN.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
 	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdOpenInvoicePartialPay() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now());
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setPaymentAmount(BigDecimal.valueOf(4));
+		invoice.setPaymentDate(LocalDate.now());
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertEquals(-10, info.getDaysPastDue());
+		assertEquals(LocalDate.now().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(BigDecimal.valueOf(6), info.getInvoiceOpenBalance());
+		assertEquals(invoice.getPaymentAmount(), info.getPaymentAmount());
+		assertEquals(invoice.getPaymentDate(), info.getPaymentDate());
+		assertEquals(InvoiceStatus.OPEN.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdLateInvoiceNoPayment() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now().minusDays(20));
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertEquals(10, info.getDaysPastDue());
+		assertEquals(invoice.getInvoiceDate().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceOpenBalance());
+		assertNull(info.getPaymentAmount());
+		assertNull(info.getPaymentDate());
+		assertEquals(InvoiceStatus.LATE.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdLateInvoicePartialPay() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now().minusDays(20));
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setPaymentAmount(BigDecimal.valueOf(4));
+		invoice.setPaymentDate(LocalDate.now());
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertEquals(10, info.getDaysPastDue());
+		assertEquals(invoice.getInvoiceDate().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(BigDecimal.valueOf(6), info.getInvoiceOpenBalance());
+		assertEquals(invoice.getPaymentAmount(), info.getPaymentAmount());
+		assertEquals(invoice.getPaymentDate(), info.getPaymentDate());
+		assertEquals(InvoiceStatus.LATE.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdClosedPaymentToday() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now().minusDays(20));
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setPaymentAmount(BigDecimal.TEN);
+		invoice.setPaymentDate(LocalDate.now());
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertNull(info.getDaysPastDue());
+		assertEquals(invoice.getInvoiceDate().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(invoice.getInvoiceAmount().subtract(invoice.getPaymentAmount()), info.getInvoiceOpenBalance());
+		assertEquals(invoice.getPaymentAmount(), info.getPaymentAmount());
+		assertEquals(invoice.getPaymentDate(), info.getPaymentDate());
+		assertEquals(InvoiceStatus.CLOSED.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdClosedPaymentInThePast() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now().minusDays(20));
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setPaymentAmount(BigDecimal.TEN);
+		invoice.setPaymentDate(LocalDate.now().minusDays(3));
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertNull(info.getDaysPastDue());
+		assertEquals(invoice.getInvoiceDate().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(invoice.getInvoiceAmount().subtract(invoice.getPaymentAmount()), info.getInvoiceOpenBalance());
+		assertEquals(invoice.getPaymentAmount(), info.getPaymentAmount());
+		assertEquals(invoice.getPaymentDate(), info.getPaymentDate());
+		assertEquals(InvoiceStatus.CLOSED.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	@Test
+	public void testRetRieveInvoiceSummaryByIdScheduled() throws Exception {
+		var invoice = new Invoice();
+		invoice.setInvoiceAmount(BigDecimal.TEN);
+		invoice.setInvoiceDate(LocalDate.now().minusDays(20));
+		invoice.setInvoiceId("1");
+		invoice.setSupplierId("2");
+		invoice.setPaymentAmount(BigDecimal.TEN);
+		invoice.setPaymentDate(LocalDate.now().plusDays(3));
+		invoice.setTerms(10);
+		
+		when(invoiceRepo.findById(any(InvoiceId.class))).thenReturn(Optional.of(invoice));
+		
+		var info = tested.retrieveInvoiceSummaryById(invoice.getInvoiceId(), invoice.getSupplierId());
+		
+		assertNull(info.getDaysPastDue());
+		assertEquals(invoice.getInvoiceDate().plusDays(invoice.getTerms()), info.getDueDate());
+		assertEquals(invoice.getInvoiceAmount(), info.getInvoiceAmount());
+		assertEquals(invoice.getInvoiceDate(), info.getInvoiceDate());
+		assertEquals(invoice.getInvoiceId(), info.getInvoiceId());
+		assertEquals(invoice.getInvoiceAmount().subtract(invoice.getPaymentAmount()), info.getInvoiceOpenBalance());
+		assertEquals(invoice.getPaymentAmount(), info.getPaymentAmount());
+		assertEquals(invoice.getPaymentDate(), info.getPaymentDate());
+		assertEquals(InvoiceStatus.SCHEDULED.getText(), info.getStatus());
+		assertEquals(invoice.getSupplierId(), info.getSupplierId());
+	}
+	
+	/************ list payments **************/
+	@Test
+	public void testRetrievePaymentSummarySuccess() throws Exception {
+		final var id = "123";
+		final var resp = List.of(new ListPaymentsSummary());
+		when(reportRepo.retrieveClosedPaymentSummaryBySupplierId(id)).thenReturn(resp);
+		
+		assertEquals(resp, tested.retrievePaymentSummaryBySupplier(id));
+	}
 }

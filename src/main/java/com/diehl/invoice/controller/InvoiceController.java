@@ -4,14 +4,17 @@
  */
 package com.diehl.invoice.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.diehl.invoice.domain.InvoiceSummary;
 import com.diehl.invoice.dto.InvoiceInfo;
+import com.diehl.invoice.dto.SupplierSummary;
+import com.diehl.invoice.dto.ListPaymentsSummary;
 import com.diehl.invoice.service.InvoiceService;
 
 /**
@@ -36,7 +39,6 @@ public class InvoiceController {
 		service.loadInvoices(file.getResource());
 	}
 
-	
 	/**
 	 * Retrieves Summary of invoices for a given supplier.
 	 * 
@@ -45,14 +47,15 @@ public class InvoiceController {
 	 * @throws Exception
 	 */
 	@GetMapping("/ListSupplierSummary")
-	public InvoiceSummary getinvoiceSummary(String supplierId) throws Exception {
+	public SupplierSummary getinvoiceSummary(String supplierId) throws Exception {
 		return service.retrieveSupplierSummary(supplierId);
 	}
 	
 	/**
-	 * Retrieves Invoice info for a given supplier.
+	 * Retrieves Invoice info for a given supplier and invoice.
 	 * 
 	 * @param supplierId id for the search
+	 * @param invoiceId invoice for the search
 	 * @return invoices if found
 	 * @throws Exception
 	 */
@@ -60,4 +63,17 @@ public class InvoiceController {
 	public InvoiceInfo getinvoiceInfo(String supplierId, String invoiceId) throws Exception {
 		return service.retrieveInvoiceSummaryById(invoiceId, supplierId);
 	}
+	
+	/**
+	 * Retrieves Payments Summary for a given supplier.
+	 * 
+	 * @param supplierId id for the search
+	 * @return SUmmary per date
+	 * @throws Exception
+	 */
+	@GetMapping("/ListPayments")
+	public List<ListPaymentsSummary> getPaymentSummary(String supplierId) throws Exception {
+		return service.retrievePaymentSummaryBySupplier(supplierId);
+	}
+
 }

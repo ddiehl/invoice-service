@@ -7,29 +7,46 @@ package com.diehl.invoice.util;
 import java.time.LocalDate;
 
 import com.diehl.invoice.domain.Invoice;
+import com.diehl.invoice.dto.InvoiceStatus;
 
 /**
- * TODO Class description
+ * Utility methods for Invoice
  * 
  * @author danieldiehl
  */
-public class InvoiceUtil {
+public final class InvoiceUtil {
 
-	public static String getInvoiceStatus(Invoice invoice) {
-		//Late
+	/**
+	 * Prevents instantiation.
+	 */
+	private InvoiceUtil() {
+		//NOOP
+	}
+	
+	/**
+	 * Discover invoice status for a given Invoice.
+	 * 
+	 * @param invoice to figure out status
+	 * @return Status
+	 */
+	public static InvoiceStatus getInvoiceStatus(Invoice invoice) {
+		//SCHEDULED
+		if (invoice.getPaymentDate() != null 
+				&& invoice.getPaymentDate().isAfter(LocalDate.now())
+				&& invoice.getPaymentAmount() != null) {
+			return InvoiceStatus.SCHEDULED;
+		}
+
+		//CLOSED
+		if (invoice.getPaymentAmount() != null 
+				&& invoice.getInvoiceAmount().compareTo(invoice.getPaymentAmount()) <= 0) {
+			return InvoiceStatus.CLOSED;
+		}
+		
 		if (invoice.getInvoiceDate().plusDays(invoice.getTerms()).isBefore(LocalDate.now())) {
-			//Not paid
-			if (invoice.getPaymentAmount() == null || invoice.getInvoiceAmount().compareTo(invoice.getPaymentAmount()) == 1) {
-				return "Late";
-			} else {
-				return "Closed";
-			}
+			return InvoiceStatus.LATE;
 		} else {
-			if (invoice.getPaymentDate() != null && invoice.getPaymentDate().isBefore(LocalDate.now())) { 
-				return "Payment Scheduled";
-			} else {
-				return "Open";
-			}
+			return InvoiceStatus.OPEN;
 		}
 	}
 	

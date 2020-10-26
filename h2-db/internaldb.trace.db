@@ -1641,3 +1641,166 @@ FROM
     LEFT OUTER JOIN 
     	(SELECT supplier_id, SUM(COALESCE(invoice_amount), 0) AS val FROM invoice WHERE COALESCE(payment_amount, 0) < invoice_amount AND invoice_date + terms >= now() GROUP BY supplier_id) tli
     ON i.SUPPLIER_ID = tli.supplier_id [42001-200]
+2020-10-25 01:14:00 jdbc[3]: exception
+java.sql.SQLClientInfoException: Client info name 'ApplicationName' not supported.
+	at org.h2.jdbc.JdbcConnection.setClientInfo(JdbcConnection.java:1749)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.populateClientAppName(GenericDataSource.java:164)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.openConnection(GenericDataSource.java:127)
+	at org.jkiss.dbeaver.ext.h2.model.H2DataSource.openConnection(H2DataSource.java:74)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCExecutionContext.connect(JDBCExecutionContext.java:97)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCRemoteInstance.initializeMainContext(JDBCRemoteInstance.java:91)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCRemoteInstance.<init>(JDBCRemoteInstance.java:57)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCDataSource.initializeRemoteInstance(JDBCDataSource.java:106)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.<init>(GenericDataSource.java:106)
+	at org.jkiss.dbeaver.ext.h2.model.H2DataSource.<init>(H2DataSource.java:43)
+	at org.jkiss.dbeaver.ext.h2.model.H2MetaModel.createDataSourceImpl(H2MetaModel.java:47)
+	at org.jkiss.dbeaver.ext.generic.GenericDataSourceProvider.openDataSource(GenericDataSourceProvider.java:106)
+	at org.jkiss.dbeaver.registry.DataSourceDescriptor.connect(DataSourceDescriptor.java:855)
+	at org.jkiss.dbeaver.runtime.jobs.ConnectJob.run(ConnectJob.java:70)
+	at org.jkiss.dbeaver.model.runtime.AbstractJob.run(AbstractJob.java:105)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+2020-10-25 03:19:15 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "PAYMENT_DATE" must be in the GROUP BY list; SQL statement:
+SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS amount, count(1) AS invoices  
+ FROM invoice 
+ WHERE supplier_id = 'supplier_7'
+   AND INVOICE_AMOUNT <= PAYMENT_AMOUNT 
+   AND PAYMENT_DATE <= now() [90016-200]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:576)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:429)
+	at org.h2.message.DbException.get(DbException.java:205)
+	at org.h2.message.DbException.get(DbException.java:181)
+	at org.h2.expression.ExpressionColumn.updateAggregate(ExpressionColumn.java:182)
+	at org.h2.command.dml.Select.updateAgg(Select.java:545)
+	at org.h2.command.dml.Select.gatherGroup(Select.java:525)
+	at org.h2.command.dml.Select.queryGroup(Select.java:487)
+	at org.h2.command.dml.Select.queryWithoutCache(Select.java:839)
+	at org.h2.command.dml.Query.queryWithoutCacheLazyCheck(Query.java:201)
+	at org.h2.command.dml.Query.query(Query.java:489)
+	at org.h2.command.dml.Query.query(Query.java:451)
+	at org.h2.command.CommandContainer.query(CommandContainer.java:285)
+	at org.h2.command.Command.executeQuery(Command.java:195)
+	at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:222)
+	at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:201)
+	at org.jkiss.dbeaver.model.impl.jdbc.exec.JDBCStatementImpl.execute(JDBCStatementImpl.java:327)
+	at org.jkiss.dbeaver.model.impl.jdbc.exec.JDBCStatementImpl.executeStatement(JDBCStatementImpl.java:130)
+	at org.jkiss.dbeaver.ui.editors.sql.execute.SQLQueryJob.executeStatement(SQLQueryJob.java:509)
+	at org.jkiss.dbeaver.ui.editors.sql.execute.SQLQueryJob.lambda$0(SQLQueryJob.java:440)
+	at org.jkiss.dbeaver.model.exec.DBExecUtils.tryExecuteRecover(DBExecUtils.java:168)
+	at org.jkiss.dbeaver.ui.editors.sql.execute.SQLQueryJob.executeSingleQuery(SQLQueryJob.java:427)
+	at org.jkiss.dbeaver.ui.editors.sql.execute.SQLQueryJob.extractData(SQLQueryJob.java:808)
+	at org.jkiss.dbeaver.ui.editors.sql.SQLEditor$QueryResultsContainer.readData(SQLEditor.java:3092)
+	at org.jkiss.dbeaver.ui.controls.resultset.ResultSetJobDataRead.lambda$0(ResultSetJobDataRead.java:121)
+	at org.jkiss.dbeaver.model.exec.DBExecUtils.tryExecuteRecover(DBExecUtils.java:168)
+	at org.jkiss.dbeaver.ui.controls.resultset.ResultSetJobDataRead.run(ResultSetJobDataRead.java:119)
+	at org.jkiss.dbeaver.ui.controls.resultset.ResultSetViewer$ResultSetDataPumpJob.run(ResultSetViewer.java:4454)
+	at org.jkiss.dbeaver.model.runtime.AbstractJob.run(AbstractJob.java:105)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+2020-10-25 10:29:09 jdbc[3]: exception
+java.sql.SQLClientInfoException: Client info name 'ApplicationName' not supported.
+	at org.h2.jdbc.JdbcConnection.setClientInfo(JdbcConnection.java:1749)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.populateClientAppName(GenericDataSource.java:164)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.openConnection(GenericDataSource.java:127)
+	at org.jkiss.dbeaver.ext.h2.model.H2DataSource.openConnection(H2DataSource.java:74)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCExecutionContext.connect(JDBCExecutionContext.java:97)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCRemoteInstance.initializeMainContext(JDBCRemoteInstance.java:91)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCRemoteInstance.<init>(JDBCRemoteInstance.java:57)
+	at org.jkiss.dbeaver.model.impl.jdbc.JDBCDataSource.initializeRemoteInstance(JDBCDataSource.java:106)
+	at org.jkiss.dbeaver.ext.generic.model.GenericDataSource.<init>(GenericDataSource.java:106)
+	at org.jkiss.dbeaver.ext.h2.model.H2DataSource.<init>(H2DataSource.java:43)
+	at org.jkiss.dbeaver.ext.h2.model.H2MetaModel.createDataSourceImpl(H2MetaModel.java:47)
+	at org.jkiss.dbeaver.ext.generic.GenericDataSourceProvider.openDataSource(GenericDataSourceProvider.java:106)
+	at org.jkiss.dbeaver.registry.DataSourceDescriptor.connect(DataSourceDescriptor.java:855)
+	at org.jkiss.dbeaver.runtime.jobs.ConnectJob.run(ConnectJob.java:70)
+	at org.jkiss.dbeaver.runtime.jobs.ConnectJob.runSync(ConnectJob.java:98)
+	at org.jkiss.dbeaver.ui.actions.datasource.DataSourceHandler.connectToDataSource(DataSourceHandler.java:106)
+	at org.jkiss.dbeaver.ui.actions.datasource.UIServiceConnectionsImpl.initConnection(UIServiceConnectionsImpl.java:65)
+	at org.jkiss.dbeaver.model.navigator.DBNDataSource.initializeNode(DBNDataSource.java:157)
+	at org.jkiss.dbeaver.model.navigator.DBNDatabaseNode.getChildren(DBNDatabaseNode.java:199)
+	at org.jkiss.dbeaver.model.navigator.DBNDatabaseNode.getChildren(DBNDatabaseNode.java:1)
+	at org.jkiss.dbeaver.model.navigator.DBNUtils.getNodeChildrenFiltered(DBNUtils.java:70)
+	at org.jkiss.dbeaver.ui.navigator.database.load.TreeLoadService.evaluate(TreeLoadService.java:49)
+	at org.jkiss.dbeaver.ui.navigator.database.load.TreeLoadService.evaluate(TreeLoadService.java:1)
+	at org.jkiss.dbeaver.ui.LoadingJob.run(LoadingJob.java:87)
+	at org.jkiss.dbeaver.ui.LoadingJob.run(LoadingJob.java:71)
+	at org.jkiss.dbeaver.model.runtime.AbstractJob.run(AbstractJob.java:105)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+2020-10-25 10:29:11 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT SUPPLIERPA0_.SUPPLIER_ID AS SUPPLIER1_0_0_, SUPPLIERPA0_.NUMBER_OF_INVOICES_PAID AS NUMBER_O2_0_0_, SUPPLIERPA0_.PAYMENT_AMOUNT AS PAYMENT_3_0_0_, SUPPLIERPA0_.PAYMENT_DATE AS PAYMENT_4_0_0_ FROM ( SELECT SUPPLIER_ID, PAYMENT_DATE, SUM(PAYMENT_AMOUNT) AS PAYMENT+[*]AMOUNT, COUNT(1) AS NUMBER_OF_INVOICES_PAID
+ FROM INVOICE
+ WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+   AND PAYMENT_DATE <= NOW()
+ GROUP BY SUPPLIER_ID, PAYMENT_DATE
+ ORDER BY PAYMENT_DATE DESC
+ ) SUPPLIERPA0_ WHERE SUPPLIERPA0_.SUPPLIER_ID=?]"; expected ",, FROM, WHERE, GROUP, HAVING, WINDOW, QUALIFY, UNION, EXCEPT, MINUS, INTERSECT, ORDER, OFFSET, FETCH, LIMIT, SAMPLE_SIZE, FOR, )"; SQL statement:
+select supplierpa0_.supplier_id as supplier1_0_0_, supplierpa0_.number_of_invoices_paid as number_o2_0_0_, supplierpa0_.payment_amount as payment_3_0_0_, supplierpa0_.payment_date as payment_4_0_0_ from ( SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS payment+amount, count(1) AS number_of_invoices_paid
+ FROM invoice
+ WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+   AND PAYMENT_DATE <= now()
+ GROUP BY supplier_id, payment_date
+ ORDER BY PAYMENT_DATE desc
+ ) supplierpa0_ where supplierpa0_.supplier_id=?] [42001-200]
+2020-10-25 10:29:51 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT SUPPLIERPA0_.SUPPLIER_ID AS SUPPLIER1_0_0_, SUPPLIERPA0_.NUMBER_OF_INVOICES_PAID AS NUMBER_O2_0_0_, 
+       SUPPLIERPA0_.PAYMENT_AMOUNT AS PAYMENT_3_0_0_, SUPPLIERPA0_.PAYMENT_DATE AS PAYMENT_4_0_0_ 
+ FROM ( SELECT SUPPLIER_ID, PAYMENT_DATE, SUM(PAYMENT_AMOUNT) AS PAYMENT+[*]AMOUNT, COUNT(1) AS NUMBER_OF_INVOICES_PAID
+          FROM INVOICE
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= NOW()
+         GROUP BY SUPPLIER_ID, PAYMENT_DATE
+ ) SUPPLIERPA0_ WHERE SUPPLIERPA0_.SUPPLIER_ID=?]"; expected ",, FROM, WHERE, GROUP, HAVING, WINDOW, QUALIFY, UNION, EXCEPT, MINUS, INTERSECT, ORDER, OFFSET, FETCH, LIMIT, SAMPLE_SIZE, FOR, )"; SQL statement:
+select supplierpa0_.supplier_id as supplier1_0_0_, supplierpa0_.number_of_invoices_paid as number_o2_0_0_, 
+       supplierpa0_.payment_amount as payment_3_0_0_, supplierpa0_.payment_date as payment_4_0_0_ 
+ from ( SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS payment+amount, count(1) AS number_of_invoices_paid
+          FROM invoice
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= now()
+         GROUP BY supplier_id, payment_date
+ ) supplierpa0_ where supplierpa0_.supplier_id=?] [42001-200]
+2020-10-25 10:30:03 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT SUPPLIERPA0_.SUPPLIER_ID AS SUPPLIER1_0_0_, SUPPLIERPA0_.NUMBER_OF_INVOICES_PAID AS NUMBER_O2_0_0_, 
+       SUPPLIERPA0_.PAYMENT_AMOUNT AS PAYMENT_3_0_0_, SUPPLIERPA0_.PAYMENT_DATE AS PAYMENT_4_0_0_ 
+ FROM ( SELECT SUPPLIER_ID, PAYMENT_DATE, SUM(PAYMENT_AMOUNT) AS PAYMENT+[*]AMOUNT, COUNT(1) AS NUMBER_OF_INVOICES_PAID
+          FROM INVOICE
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= NOW()
+         GROUP BY SUPPLIER_ID, PAYMENT_DATE
+ ORDER BY PAYMENT_DATE DESC
+ ) SUPPLIERPA0_ WHERE SUPPLIERPA0_.SUPPLIER_ID='supplier_7'"; expected ",, FROM, WHERE, GROUP, HAVING, WINDOW, QUALIFY, UNION, EXCEPT, MINUS, INTERSECT, ORDER, OFFSET, FETCH, LIMIT, SAMPLE_SIZE, FOR, )"; SQL statement:
+select supplierpa0_.supplier_id as supplier1_0_0_, supplierpa0_.number_of_invoices_paid as number_o2_0_0_, 
+       supplierpa0_.payment_amount as payment_3_0_0_, supplierpa0_.payment_date as payment_4_0_0_ 
+ from ( SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS payment+amount, count(1) AS number_of_invoices_paid
+          FROM invoice
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= now()
+         GROUP BY supplier_id, payment_date
+ ORDER BY PAYMENT_DATE desc
+ ) supplierpa0_ where supplierpa0_.supplier_id='supplier_7' [42001-200]
+2020-10-25 10:30:07 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT SUPPLIERPA0_.SUPPLIER_ID AS SUPPLIER1_0_0_, SUPPLIERPA0_.NUMBER_OF_INVOICES_PAID AS NUMBER_O2_0_0_, 
+       SUPPLIERPA0_.PAYMENT_AMOUNT AS PAYMENT_3_0_0_, SUPPLIERPA0_.PAYMENT_DATE AS PAYMENT_4_0_0_ 
+ FROM ( SELECT SUPPLIER_ID, PAYMENT_DATE, SUM(PAYMENT_AMOUNT) AS PAYMENT+[*]AMOUNT, COUNT(1) AS NUMBER_OF_INVOICES_PAID
+          FROM INVOICE
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= NOW()
+         GROUP BY SUPPLIER_ID, PAYMENT_DATE
+ ) SUPPLIERPA0_ WHERE SUPPLIERPA0_.SUPPLIER_ID='supplier_7'"; expected ",, FROM, WHERE, GROUP, HAVING, WINDOW, QUALIFY, UNION, EXCEPT, MINUS, INTERSECT, ORDER, OFFSET, FETCH, LIMIT, SAMPLE_SIZE, FOR, )"; SQL statement:
+select supplierpa0_.supplier_id as supplier1_0_0_, supplierpa0_.number_of_invoices_paid as number_o2_0_0_, 
+       supplierpa0_.payment_amount as payment_3_0_0_, supplierpa0_.payment_date as payment_4_0_0_ 
+ from ( SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS payment+amount, count(1) AS number_of_invoices_paid
+          FROM invoice
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= now()
+         GROUP BY supplier_id, payment_date
+ ) supplierpa0_ where supplierpa0_.supplier_id='supplier_7' [42001-200]
+2020-10-25 10:30:39 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT SUPPLIER_ID, PAYMENT_DATE, SUM(PAYMENT_AMOUNT) AS PAYMENT+[*]AMOUNT, COUNT(1) AS NUMBER_OF_INVOICES_PAID
+          FROM INVOICE
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= NOW()
+         GROUP BY SUPPLIER_ID, PAYMENT_DATE"; SQL statement:
+SELECT SUPPLIER_ID, PAYMENT_DATE, sum(payment_amount) AS payment+amount, count(1) AS number_of_invoices_paid
+          FROM invoice
+         WHERE INVOICE_AMOUNT <= PAYMENT_AMOUNT
+           AND PAYMENT_DATE <= now()
+         GROUP BY supplier_id, payment_date [42000-200]
